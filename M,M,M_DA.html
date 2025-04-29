@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estadísticas de Datos Agrupados</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.7.1/jspdf.plugin.autotable.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <style>
+        body {
+            background: linear-gradient(to bottom, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.342)), url('imagenes/probabilidad.jpg') no-repeat center center;
+            background-size: cover;
+            color: rgb(0, 0, 0);
+            text-align: center;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .calculator-container {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 900px;
+        }
+
+        .form-label {
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-control {
+            border-radius: 0.75rem;
+        }
+
+        .btn-primary {
+            background-color: #007bff;
+            border-color: #007bff;
+        }
+
+        .btn-primary:hover {
+            background-color: #0056b3;
+            border-color: #0056b3;
+        }
+
+        .btn-success {
+            background-color: #28a745;
+            border-color: #28a745;
+        }
+
+        .btn-success:hover {
+            background-color: #1e7e34;
+            border-color: #1e7e34;
+        }
+
+        #results-table {
+            margin-top: 2rem;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        #results-table th {
+            background-color: #007bff;
+            color: white;
+        }
+
+        #results-table tbody tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        .results-summary {
+            margin-top: 1.5rem;
+            padding: 15px;
+            background-color: #e9ecef;
+            border-radius: 10px;
+        }
+
+        .results-summary p {
+            margin-bottom: 0.5rem;
+        }
+
+        .results-summary strong {
+            font-weight: bold;
+        }
+
+        .navbar {
+            display: flex;
+            flex-direction: row;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .navbar a {
+            font-size: 18px;
+            padding: 10px 20px;
+            font-weight: 600;
+            color: #ffffff;
+            transition: color 0.3s;
+        }
+
+        .navbar a:hover {
+            color: #000000;
+        }
+
+        .navbar li {
+            position: relative;
+        }
+
+        .navbar .dropdown-menu {
+            background-color: rgb(14, 13, 13);
+            box-shadow: 0 5px 10px rgb(255, 255, 255);
+            z-index: 10;
+        }
+
+        /* Hacemos que el dropdown funcione solo con Bootstrap */
+        .nav-item.dropdown:hover .dropdown-menu {
+            display: block;
+        }
+
+        .dropdown-item {
+            padding: 10px 15px;
+            display: block;
+            color: #d6d6d6;
+        }
+
+        .dropdown-item:hover {
+            background-color: #ffffff;
+        }
+
+        /* Toggle menu cuando está activo */
+        #menu-toggle:checked+.menu-icon+.navbar {
+            flex-direction: column;
+            position: absolute;
+            background-color: #2a64e2;
+            top: 70px;
+            left: 0;
+            right: 0;
+            gap: 10px;
+            padding: 20px 0;
+        }
+
+        #menu-toggle:checked+.menu-icon+.navbar a {
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+
+
+    <!-- Nuevo Navbar con Bootstrap -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+        <div class="container">
+            <a class="navbar-brand fw-bold text-uppercase text-primary" href="index.html">Probabilitor</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#menuNavbar">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse justify-content-end" id="menuNavbar">
+                <ul class="navbar-nav mb-2 mb-lg-0">
+                    <!-- Dropdown Datos Agrupados -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="agrupadosDropdown" role="button"
+                            data-bs-toggle="dropdown" aria-expanded="false">
+                            Datos Agrupados
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="agrupadosDropdown">
+                            <li><a class="dropdown-item" href="M,M,M_DA.html">MODA, MEDIANA, MEDIA</a></li>
+                            <li><a class="dropdown-item" href="#"></a></li>
+                            <li><a class="dropdown-item" href="#"></a></li>
+                        </ul>
+                    </li>
+
+                    <!-- Dropdown Datos No Agrupados -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="noAgrupadosDropdown" role="button"
+                            data-bs-toggle="dropdown" aria-expanded="false">
+                            Datos NO Agrupados
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="noAgrupadosDropdown">
+                            <li><a class="dropdown-item" href="M,M,M_DNA.html">MODA, MEDIANA, MEDIA</a></li>
+                            <li><a class="dropdown-item" href="#"></a></li>
+                            <li><a class="dropdown-item" href="#"></a></li>
+                        </ul>
+                    </li>
+
+                    <!-- Contacto -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">Contacto</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+
+
+    <div class="calculator-container">
+        <h1 class="text-center mb-4">Calculadora de Estadísticas (Datos Agrupados)</h1>
+
+        <div class="mb-3">
+            <label for="dataInput" class="form-label">Introduce los datos separados por comas:</label>
+            <textarea class="form-control" id="dataInput" rows="3" placeholder="Ejemplo: 10, 12, 15, 15, 18"></textarea>
+        </div>
+        <div class="mb-3">
+            <label for="intervalCount" class="form-label">¿Cuántos intervalos quieres?</label>
+            <input type="number" class="form-control" id="intervalCount" placeholder="O deja en blanco para automático">
+        </div>
+        <button onclick="processData()" class="btn btn-primary w-100 mb-3">Calcular</button>
+
+        <div class="mb-3">
+            <label for="quartilesInput" class="form-label">¿Qué Cuartiles quieres calcular? (Ejemplo: 1,3)</label>
+            <input type="text" class="form-control" id="quartilesInput" placeholder="Ej: 1,2,3">
+        </div>
+        <div class="mb-3">
+            <label for="decilesInput" class="form-label">¿Qué Deciles quieres calcular? (Ejemplo: 2,5,8)</label>
+            <input type="text" class="form-control" id="decilesInput" placeholder="Ej: 1,4,7">
+        </div>
+        <div class="mb-3">
+            <label for="percentilesInput" class="form-label">¿Qué Percentiles quieres calcular? (Ejemplo:
+                25,50,90)</label>
+            <input type="text" class="form-control" id="percentilesInput" placeholder="Ej: 25,50,75">
+        </div>
+
+
+        <div id="results"></div>
+
+        <button onclick="generatePDF()" class="btn btn-success w-100 mt-3">Exportar a PDF</button>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
+        crossorigin="anonymous"></script>
+    <script>
+        function processData() {
+            const dataInput = document.getElementById('dataInput').value;
+            let intervalCount = document.getElementById('intervalCount').value;
+            const numbers = dataInput.split(',').map(x => parseFloat(x.trim())).filter(x => !isNaN(x));
+
+            if (numbers.length === 0) {
+                alert("Por favor introduce los datos correctamente.");
+                return;
+            }
+
+            // Preguntar si no se ha proporcionado un número de intervalos
+            if (!intervalCount) {
+                const quiereEspecificar = confirm("¿Deseas especificar el número de intervalos?");
+                if (quiereEspecificar) {
+                    intervalCount = prompt("Introduce el número de intervalos:");
+                    if (!intervalCount || isNaN(intervalCount) || parseInt(intervalCount) <= 0) {
+                        alert("Número de intervalos inválido.");
+                        return;
+                    }
+                } else {
+                    // Cálculo automático: regla de Sturges
+                    intervalCount = Math.ceil(1 + 3.322 * Math.log10(numbers.length));
+                    alert(`Se usarán ${intervalCount} intervalos automáticamente (Regla de Sturges).`);
+                }
+            }
+
+            intervalCount = parseInt(intervalCount);
+
+            numbers.sort((a, b) => a - b);
+            const min = Math.min(...numbers);
+            const max = Math.max(...numbers);
+            const range = max - min;
+            const intervalWidth = Math.ceil(range / intervalCount);
+
+            let intervals = [];
+            let start = Math.floor(min);
+            for (let i = 0; i < intervalCount; i++) {
+                let end = start + intervalWidth - 1;
+                intervals.push([start, end]);
+                start = end + 1;
+            }
+
+            let tableData = intervals.map(interval => {
+                const [lower, upper] = interval;
+                const freq = numbers.filter(x => x >= lower && x <= upper).length;
+                const mark = (lower + upper) / 2;
+                return { lower, upper, freq, mark };
+            }).filter(row => row.freq > 0);
+
+            const n = tableData.reduce((sum, row) => sum + row.freq, 0);
+            const mean = tableData.reduce((sum, row) => sum + row.mark * row.freq, 0) / n;
+
+            tableData.forEach(row => {
+                row.diff = row.mark - mean;
+                row.diffSq = row.diff ** 2;
+                row.fDiffSq = row.freq * row.diffSq;
+            });
+
+            let cumulativeFreq = 0;
+            let medianClass;
+            tableData.forEach(row => {
+                cumulativeFreq += row.freq;
+                if (!medianClass && cumulativeFreq >= n / 2) {
+                    medianClass = row;
+                    row.cumulativeFreqBefore = cumulativeFreq - row.freq;
+                }
+            });
+
+            const L = medianClass.lower;
+            const F = medianClass.cumulativeFreqBefore;
+            const f = medianClass.freq;
+            const h = medianClass.upper - medianClass.lower;
+            const median = L + (((n / 2) - F) / f) * h;
+
+            let modalClass = tableData.reduce((a, b) => a.freq > b.freq ? a : b);
+            const d1 = modalClass.freq - (tableData[tableData.indexOf(modalClass) - 1]?.freq || 0);
+            const d2 = modalClass.freq - (tableData[tableData.indexOf(modalClass) + 1]?.freq || 0);
+            const hModa = modalClass.upper - modalClass.lower;
+            const moda = modalClass.lower + (d1 / (d1 + d2)) * hModa;
+
+            const variance = tableData.reduce((sum, row) => sum + row.fDiffSq, 0) / n;
+            const stdDev = Math.sqrt(variance);
+            const meanDeviation = tableData.reduce((sum, row) => sum + row.freq * Math.abs(row.diff), 0) / n;
+            const skewness = (3 * (mean - median)) / stdDev;
+
+            // --- Nuevos cálculos de Cuartiles, Deciles y Percentiles ---
+
+            function calculateGroupedPosition(k, type) {
+                let pos = (k / type) * n;
+                let cfBefore = 0;
+                for (let i = 0; i < tableData.length; i++) {
+                    if (pos <= (cfBefore + tableData[i].freq)) {
+                        const row = tableData[i];
+                        const L = row.lower;
+                        const F = cfBefore;
+                        const f = row.freq;
+                        const h = row.upper - row.lower;
+                        return L + ((pos - F) / f) * h;
+                    }
+                    cfBefore += tableData[i].freq;
+                }
+                return null;
+            }
+
+            // Leer los inputs de cuartiles, deciles y percentiles
+            const quartilesInput = document.getElementById('quartilesInput').value.trim();
+            const decilesInput = document.getElementById('decilesInput').value.trim();
+            const percentilesInput = document.getElementById('percentilesInput').value.trim();
+
+            let quartiles = [], deciles = [], percentiles = [];
+            let extraResults = "";
+
+            // Cuartiles
+            if (quartilesInput) {
+                const qValues = quartilesInput.split(',').map(x => parseInt(x.trim())).filter(x => !isNaN(x) && x >= 1 && x <= 3);
+                qValues.forEach(q => {
+                    const value = calculateGroupedPosition(q, 4);
+                    quartiles.push({ q, value });
+                });
+                if (quartiles.length > 0) {
+                    extraResults += `<p><strong>Cuartiles:</strong></p>`;
+                    quartiles.forEach(q => {
+                        extraResults += `<p>Q${q.q}: ${q.value.toFixed(4)}</p>`;
+                    });
+                }
+            }
+
+            // Deciles
+            if (decilesInput) {
+                const dValues = decilesInput.split(',').map(x => parseInt(x.trim())).filter(x => !isNaN(x) && x >= 1 && x <= 9);
+                dValues.forEach(d => {
+                    const value = calculateGroupedPosition(d, 10);
+                    deciles.push({ d, value });
+                });
+                if (deciles.length > 0) {
+                    extraResults += `<p><strong>Deciles:</strong></p>`;
+                    deciles.forEach(d => {
+                        extraResults += `<p>D${d.d}: ${d.value.toFixed(4)}</p>`;
+                    });
+                }
+            }
+
+            // Percentiles
+            if (percentilesInput) {
+                const pValues = percentilesInput.split(',').map(x => parseInt(x.trim())).filter(x => !isNaN(x) && x >= 1 && x <= 99);
+                pValues.forEach(p => {
+                    const value = calculateGroupedPosition(p, 100);
+                    percentiles.push({ p, value });
+                });
+                if (percentiles.length > 0) {
+                    extraResults += `<p><strong>Percentiles:</strong></p>`;
+                    percentiles.forEach(p => {
+                        extraResults += `<p>P${p.p}: ${p.value.toFixed(4)}</p>`;
+                    });
+                }
+            }
+
+
+            let html = `
+        <h2 class="mt-4 text-center">Tabla de Frecuencias</h2>
+        <table class="table table-bordered table-striped" id="results-table">
+            <thead class="table-dark">
+                <tr>
+                    <th>Intervalo</th>
+                    <th>Frecuencia (f)</th>
+                    <th>Marca de Clase (x)</th>
+                    <th>(x - Media)</th>
+                    <th>(x - Media)<sup>2</sup></th>
+                    <th>f(x - Media)<sup>2</sup></th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+            tableData.forEach(row => {
+                html += `
+                <tr>
+                    <td>[${row.lower} - ${row.upper}]</td>
+                    <td>${row.freq}</td>
+                    <td>${row.mark.toFixed(2)}</td>
+                    <td>${row.diff.toFixed(4)}</td>
+                    <td>${row.diffSq.toFixed(4)}</td>
+                    <td>${row.fDiffSq.toFixed(4)}</td>
+                </tr>
+        `;
+            });
+            html += `
+            </tbody>
+        </table>
+
+        <div class="results-summary mt-4">
+            <p><strong>Media:</strong> ${mean.toFixed(4)}</p>
+            <p><strong>Mediana:</strong> ${median.toFixed(4)}</p>
+            <p><strong>Moda:</strong> ${moda.toFixed(4)}</p>
+            <p><strong>Varianza:</strong> ${variance.toFixed(4)}</p>
+            <p><strong>Desviación estándar:</strong> ${stdDev.toFixed(4)}</p>
+            <p><strong>Desviación media:</strong> ${meanDeviation.toFixed(4)}</p>
+            <p><strong>Asimetría:</strong> ${skewness.toFixed(4)}</p>
+        </div>
+    `;
+
+            if (extraResults) {
+                html += `
+    <div class="results-summary mt-4">
+        <h4>Cuartiles, Deciles y Percentiles Calculados</h4>
+        ${extraResults}
+    </div>
+    `;
+            }
+
+            document.getElementById('results').innerHTML = html;
+        }
+
+
+
+        function generatePDF() {
+            console.log("El botón de exportar a PDF ha sido clickeado.");
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF();
+            const title = 'Estadísticas de Datos Agrupados';
+            const resultsElement = document.getElementById('results');
+
+            pdf.setFontSize(20);
+            pdf.text(title, pdf.internal.pageSize.getWidth() / 2, 20, { align: 'center' });
+
+            pdf.setFontSize(12);
+            let yPosition = 35;
+            const lineHeight = 5;
+
+            // Añadir la tabla de resultados al PDF
+            const resultsTable = document.getElementById('results-table');
+            if (resultsTable) {
+                const tableData = [];
+                const headers = [];
+
+                // Obtener los encabezados de la tabla
+                const thElements = resultsTable.querySelectorAll('thead th');
+                thElements.forEach(th => {
+                    headers.push(th.textContent);
+                });
+                tableData.push(headers);
+
+                // Obtener los datos de las filas de la tabla
+                const trElements = resultsTable.querySelectorAll('tbody tr');
+                trElements.forEach(tr => {
+                    const rowData = [];
+                    const tdElements = tr.querySelectorAll('td');
+                    tdElements.forEach(td => {
+                        rowData.push(td.textContent);
+                    });
+                    tableData.push(rowData);
+                });
+
+                // Utilizar autoTable para generar la tabla
+                pdf.autoTable({
+                    head: [headers],
+                    body: tableData.slice(1), // Excluimos la fila de encabezados duplicada
+                    startY: yPosition + 10,
+                    theme: 'striped',
+                    headStyles: { fillColor: [0, 123, 255] }
+                });
+                yPosition = pdf.previousAutoTable.finalY + 10;
+            }
+
+            // Agregar Cuartiles, Deciles y Percentiles al PDF
+            const extraSummary = resultsElement.querySelectorAll('.results-summary')[1];
+            if (extraSummary) {
+                const extraText = extraSummary.innerText;
+                const splitExtra = pdf.splitTextToSize(extraText, pdf.internal.pageSize.getWidth() - 20);
+                pdf.text(splitExtra, 10, pdf.lastAutoTable ? pdf.lastAutoTable.finalY + 20 : yPosition + 30);
+            }
+
+
+            // Añadir el resumen de resultados al PDF
+            const summaryElement = resultsElement.querySelector('.results-summary');
+            if (summaryElement) {
+                const summaryText = summaryElement.innerText;
+                const splitText = pdf.splitTextToSize(summaryText, pdf.internal.pageSize.getWidth() - 20);
+                pdf.text(splitText, 10, yPosition + 10);
+            }
+
+            // Guardar el PDF con un nombre de archivo
+            pdf.save('estadisticas_agrupadas.pdf');
+        }
+    </script>
+
+</body>
+
+</html>

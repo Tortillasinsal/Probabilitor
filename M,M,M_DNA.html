@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calcular Moda, Media y Mediana - Datos No Agrupados</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script>
+        // Función para calcular la Moda
+        function calcularModa(arr) {
+            let counts = {};
+            let maxCount = 0;
+            let moda = [];
+
+            arr.forEach(num => {
+                counts[num] = (counts[num] || 0) + 1;
+                if (counts[num] > maxCount) {
+                    maxCount = counts[num];
+                }
+            });
+
+            for (let num in counts) {
+                if (counts[num] === maxCount) {
+                    moda.push(num);
+                }
+            }
+
+            return moda;
+        }
+
+        // Función para calcular la Mediana
+        function calcularMediana(arr) {
+            arr.sort((a, b) => a - b);
+            const middle = Math.floor(arr.length / 2);
+
+            if (arr.length % 2 === 0) {
+                return (arr[middle - 1] + arr[middle]) / 2;
+            } else {
+                return arr[middle];
+            }
+        }
+
+        // Función para calcular la Media
+        function calcularMedia(arr) {
+            const suma = arr.reduce((acc, val) => acc + val, 0);
+            return suma / arr.length;
+        }
+
+        // Función para manejar el evento del formulario y mostrar los resultados
+        function calcularEstadisticos(event) {
+            event.preventDefault();
+
+            let datos = document.getElementById("inputDatos").value.split(',').map(num => parseFloat(num.trim()));
+
+            if (datos.length > 120) {
+                alert("El número máximo de datos es 120.");
+                return;
+            }
+
+            let moda = calcularModa(datos);
+            let mediana = calcularMediana(datos);
+            let media = calcularMedia(datos);
+
+            // Mostrar los resultados
+            document.getElementById("resultadoModa").innerText = "Moda: " + moda.join(', ');
+            document.getElementById("resultadoMediana").innerText = "Mediana: " + mediana;
+            document.getElementById("resultadoMedia").innerText = "Media: " + media;
+            document.getElementById("resultados").style.display = 'block';
+        }
+
+        // Función para generar el PDF con los resultados
+        function generarPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            // Añadir el título y los resultados al PDF
+            doc.text("Resultados Estadísticos - Datos No Agrupados", 20, 10);
+            doc.text(`Moda: ${document.getElementById("resultadoModa").innerText}`, 20, 20);
+            doc.text(`Mediana: ${document.getElementById("resultadoMediana").innerText}`, 20, 30);
+            doc.text(`Media: ${document.getElementById("resultadoMedia").innerText}`, 20, 40);
+
+            // Descargar el PDF
+            doc.save("resultados_estadisticos_no_agrupados.pdf");
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: linear-gradient(to bottom, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.342)), url('imagenes/probabilidad.jpg') no-repeat center center;
+            background-size: cover;
+            color: white;
+            text-align: center;
+            padding-top: 80px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 30px;
+            border-radius: 10px;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+        }
+
+        .resultados {
+            margin-top: 20px;
+            display: none;
+        }
+
+        .btn-regresar {
+            margin-top: 20px;
+            background-color: #2a64e2;
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .btn-regresar:hover {
+            background-color: #1a4fa4;
+        }
+
+        .btn-pdf {
+            margin-top: 10px;
+            background-color: #6344ee;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+        }
+
+        .btn-pdf:hover {
+            background-color: #3e2fa5;
+        }
+
+        .navbar {
+            display: flex;
+            flex-direction: row;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .navbar a {
+            font-size: 18px;
+            padding: 10px 20px;
+            font-weight: 600;
+            color: #ffffff;
+            transition: color 0.3s;
+        }
+
+        .navbar a:hover {
+            color: #000000;
+        }
+
+        .navbar li {
+            position: relative;
+        }
+
+        .navbar .dropdown-menu {
+            background-color: rgb(14, 13, 13);
+            box-shadow: 0 5px 10px rgb(255, 255, 255);
+            z-index: 10;
+        }
+
+        /* Hacemos que el dropdown funcione solo con Bootstrap */
+        .nav-item.dropdown:hover .dropdown-menu {
+            display: block;
+        }
+
+        .dropdown-item {
+            padding: 10px 15px;
+            display: block;
+            color: #d6d6d6;
+        }
+
+        .dropdown-item:hover {
+            background-color: #ffffff;
+        }
+
+        /* Toggle menu cuando está activo */
+        #menu-toggle:checked+.menu-icon+.navbar {
+            flex-direction: column;
+            position: absolute;
+            background-color: #2a64e2;
+            top: 70px;
+            left: 0;
+            right: 0;
+            gap: 10px;
+            padding: 20px 0;
+        }
+
+        #menu-toggle:checked+.menu-icon+.navbar a {
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+        <div class="container">
+            <a class="navbar-brand fw-bold text-uppercase text-primary" href="index.html">Probabilitor</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#menuNavbar">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse justify-content-end" id="menuNavbar">
+                <ul class="navbar-nav mb-2 mb-lg-0">
+                    <!-- Dropdown Datos Agrupados -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="agrupadosDropdown" role="button"
+                            data-bs-toggle="dropdown" aria-expanded="false">
+                            Datos Agrupados
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="agrupadosDropdown">
+                            <li><a class="dropdown-item" href="M,M,M_DA.html">MODA, MEDIANA, MEDIA</a></li>
+                            <li><a class="dropdown-item" href="#"></a></li>
+                            <li><a class="dropdown-item" href="#"></a></li>
+                        </ul>
+                    </li>
+
+                    <!-- Dropdown Datos No Agrupados -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="noAgrupadosDropdown" role="button"
+                            data-bs-toggle="dropdown" aria-expanded="false">
+                            Datos NO Agrupados
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="noAgrupadosDropdown">
+                            <li><a class="dropdown-item" href="M,M,M_DNA.html">MODA, MEDIANA, MEDIA</a></li>
+                            <li><a class="dropdown-item" href="#"></a></li>
+                            <li><a class="dropdown-item" href="#"></a></li>
+                        </ul>
+                    </li>
+
+                    <!-- Contacto -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">Contacto</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+
+
+    <div class="container">
+        <h1>Calcular Moda, Media y Mediana - Datos No Agrupados</h1>
+        <form onsubmit="calcularEstadisticos(event)">
+            <div class="mb-3">
+                <label for="inputDatos" class="form-label">Introduce los datos (separados por coma):</label>
+                <input type="text" class="form-control" id="inputDatos" required>
+                <small class="form-text text-muted">Ejemplo: 2, 3, 5, 7, 10</small>
+            </div>
+            <button type="submit" class="btn btn-primary">Calcular</button>
+        </form>
+
+        <div class="resultados" id="resultados">
+            <h3 id="resultadoModa">Moda: </h3>
+            <h3 id="resultadoMediana">Mediana: </h3>
+            <h3 id="resultadoMedia">Media: </h3>
+            <button class="btn-pdf" onclick="generarPDF()">Descargar PDF</button>
+            <br>
+            <a href="#" class="btn-regresar" onclick="window.history.back();">Regresar</a>
+        </div>
+    </div>
+</body>
+
+</html>
