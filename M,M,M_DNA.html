@@ -3,94 +3,138 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calcular Moda, Media y Mediana - Datos No Agrupados</title>
-    <link rel="icon" href="IMAGENES/logo web.jpg" type="imge/x-icon">
+    <title>Calcular Moda, Media, Mediana y Posicionales</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link rel="icon" href="IMAGENES/logo web.jpg" type="imge/x-icon">
     <script>
-        // Función para calcular la Moda
         function calcularModa(arr) {
-            let counts = {};
-            let maxCount = 0;
-            let moda = [];
-
+            let counts = {}, maxCount = 0, moda = [];
             arr.forEach(num => {
                 counts[num] = (counts[num] || 0) + 1;
-                if (counts[num] > maxCount) {
-                    maxCount = counts[num];
-                }
+                if (counts[num] > maxCount) maxCount = counts[num];
             });
-
             for (let num in counts) {
-                if (counts[num] === maxCount) {
-                    moda.push(num);
-                }
+                if (counts[num] === maxCount) moda.push(num);
             }
-
             return moda;
         }
-
-        // Función para calcular la Mediana
+    
         function calcularMediana(arr) {
             arr.sort((a, b) => a - b);
             const middle = Math.floor(arr.length / 2);
-
-            if (arr.length % 2 === 0) {
-                return (arr[middle - 1] + arr[middle]) / 2;
-            } else {
-                return arr[middle];
-            }
+            return arr.length % 2 === 0 ? (arr[middle - 1] + arr[middle]) / 2 : arr[middle];
         }
-
-        // Función para calcular la Media
+    
         function calcularMedia(arr) {
-            const suma = arr.reduce((acc, val) => acc + val, 0);
-            return suma / arr.length;
+            return arr.reduce((acc, val) => acc + val, 0) / arr.length;
         }
-
-        // Función para manejar el evento del formulario y mostrar los resultados
+    
+        function calcularEstadisticoPosicional(arr, tipo, valor) {
+            arr.sort((a, b) => a - b);
+            const n = arr.length;
+            let pos;
+    
+            if (tipo === "cuartil") pos = (valor * (n + 1)) / 4;
+            else if (tipo === "decil") pos = (valor * (n + 1)) / 10;
+            else if (tipo === "percentil") pos = (valor * (n + 1)) / 100;
+            else return "Tipo inválido";
+    
+            const k = Math.floor(pos);
+            const d = pos - k;
+    
+            if (k <= 0) return arr[0];
+            if (k >= n) return arr[n - 1];
+    
+            return arr[k - 1] + d * (arr[k] - arr[k - 1]);
+        }
+    
         function calcularEstadisticos(event) {
             event.preventDefault();
-
-            let datos = document.getElementById("inputDatos").value.split(',').map(num => parseFloat(num.trim()));
-
-            if (datos.length > 120) {
-                alert("El número máximo de datos es 120.");
-                return;
-            }
-
-            let moda = calcularModa(datos);
-            let mediana = calcularMediana(datos);
-            let media = calcularMedia(datos);
-
-            // Mostrar los resultados
+            const datos = document.getElementById("inputDatos").value.split(',').map(num => parseFloat(num.trim()));
+            if (datos.length > 120) return alert("Máximo 120 datos.");
+            if (datos.some(isNaN)) return alert("Solo números separados por coma.");
+    
+            const moda = calcularModa(datos);
+            const mediana = calcularMediana(datos);
+            const media = calcularMedia(datos);
+    
+            const cuartiles = document.getElementById("cuartilValor").value.split(',').map(num => parseInt(num.trim()));
+            const deciles = document.getElementById("decilValor").value.split(',').map(num => parseInt(num.trim()));
+            const percentiles = document.getElementById("percentilValor").value.split(',').map(num => parseInt(num.trim()));
+    
+            let resultadoPosicional = "";
+    
+            // Validación de cuartiles
+            cuartiles.forEach(c => {
+                if (!isNaN(c)) {
+                    if (c >= 1 && c <= 4) {
+                        resultadoPosicional += `Cuartil ${c}: ${calcularEstadisticoPosicional(datos, "cuartil", c)}\n`;
+                    } else {
+                        resultadoPosicional += `Cuartil ${c}: ❌ No existe (solo del 1 al 4)\n`;
+                    }
+                }
+            });
+    
+            // Validación de deciles
+            deciles.forEach(d => {
+                if (!isNaN(d)) {
+                    if (d >= 1 && d <= 10) {
+                        resultadoPosicional += `Decil ${d}: ${calcularEstadisticoPosicional(datos, "decil", d)}\n`;
+                    } else {
+                        resultadoPosicional += `Decil ${d}: ❌ No existe (solo del 1 al 10)\n`;
+                    }
+                }
+            });
+    
+            // Validación de percentiles
+            percentiles.forEach(p => {
+                if (!isNaN(p)) {
+                    if (p >= 1 && p <= 100) {
+                        resultadoPosicional += `Percentil ${p}: ${calcularEstadisticoPosicional(datos, "percentil", p)}\n`;
+                    } else {
+                        resultadoPosicional += `Percentil ${p}: ❌ No existe (solo del 1 al 100)\n`;
+                    }
+                }
+            });
+    
             document.getElementById("resultadoModa").innerText = "Moda: " + moda.join(', ');
             document.getElementById("resultadoMediana").innerText = "Mediana: " + mediana;
             document.getElementById("resultadoMedia").innerText = "Media: " + media;
-            document.getElementById("resultados").style.display = 'block';
+    
+            const posDiv = document.getElementById("resultadoPosicional");
+            if (resultadoPosicional) {
+                posDiv.innerText = resultadoPosicional;
+                posDiv.style.display = "block";
+            } else {
+                posDiv.style.display = "none";
+            }
+    
+            document.getElementById("resultados").style.display = "block";
         }
-
-        // Función para generar el PDF con los resultados
+    
         function generarPDF() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
-
-            // Añadir el título y los resultados al PDF
             doc.text("Resultados Estadísticos - Datos No Agrupados", 20, 10);
-            doc.text(`Moda: ${document.getElementById("resultadoModa").innerText}`, 20, 20);
-            doc.text(`Mediana: ${document.getElementById("resultadoMediana").innerText}`, 20, 30);
-            doc.text(`Media: ${document.getElementById("resultadoMedia").innerText}`, 20, 40);
-
-            // Descargar el PDF
+            doc.text(document.getElementById("resultadoModa").innerText, 20, 20);
+            doc.text(document.getElementById("resultadoMediana").innerText, 20, 30);
+            doc.text(document.getElementById("resultadoMedia").innerText, 20, 40);
+            const posicional = document.getElementById("resultadoPosicional").innerText;
+            if (posicional) {
+                const lines = posicional.split('\n');
+                lines.forEach((line, i) => {
+                    doc.text(line, 20, 50 + i * 10);
+                });
+            }
             doc.save("resultados_estadisticos_no_agrupados.pdf");
         }
     </script>
+    
     <style>
         body {
             font-family: 'Roboto', sans-serif;
-            background: linear-gradient(to bottom, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.342)), url('IMAGENES/probabilidad.jpg') no-repeat center center;
+            background: linear-gradient(to bottom, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.342)), url('imagenes/probabilidad.jpg') no-repeat center center;
             background-size: cover;
             color: white;
             text-align: center;
@@ -106,23 +150,22 @@
             border-radius: 10px;
         }
 
-        h1 {
-            margin-bottom: 20px;
-        }
-
         .resultados {
             margin-top: 20px;
             display: none;
         }
 
-        .btn-regresar {
-            margin-top: 20px;
-            background-color: #2a64e2;
-            color: white;
-            text-decoration: none;
+        .btn-regresar,
+        .btn-pdf {
+            margin-top: 10px;
             padding: 10px 20px;
             border-radius: 5px;
-            cursor: pointer;
+            color: white;
+            text-decoration: none;
+        }
+
+        .btn-regresar {
+            background-color: #2a64e2;
         }
 
         .btn-regresar:hover {
@@ -130,17 +173,12 @@
         }
 
         .btn-pdf {
-            margin-top: 10px;
             background-color: #6344ee;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 5px;
         }
 
         .btn-pdf:hover {
             background-color: #3e2fa5;
         }
-
         .navbar {
             display: flex;
             flex-direction: row;
@@ -204,9 +242,12 @@
 </head>
 
 <body>
+
+ 
+    <!-- Nuevo Navbar con Bootstrap -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
         <div class="container">
-            <a class="navbar-brand fw-bold text-uppercase text-primary" href="index.html">Probabilitor</a>
+            <a class="navbar-brand fw-bold text-uppercase text-primary" href="#">Probabilitor</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#menuNavbar">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -217,25 +258,12 @@
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="agrupadosDropdown" role="button"
                             data-bs-toggle="dropdown" aria-expanded="false">
-                            Datos Agrupados
+                            OPCIONES
                         </a>
                         <ul class="dropdown-menu" aria-labelledby="agrupadosDropdown">
-                            <li><a class="dropdown-item" href="M,M,M_DA.html">MODA, MEDIANA, MEDIA</a></li>
-                            <li><a class="dropdown-item" href="#"></a></li>
-                            <li><a class="dropdown-item" href="#"></a></li>
-                        </ul>
-                    </li>
-
-                    <!-- Dropdown Datos No Agrupados -->
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="noAgrupadosDropdown" role="button"
-                            data-bs-toggle="dropdown" aria-expanded="false">
-                            Datos NO Agrupados
-                        </a>
-                        <ul class="dropdown-menu" aria-labelledby="noAgrupadosDropdown">
-                            <li><a class="dropdown-item" href="M,M,M_DNA.html">MODA, MEDIANA, MEDIA</a></li>
-                            <li><a class="dropdown-item" href="#"></a></li>
-                            <li><a class="dropdown-item" href="#"></a></li>
+                            <li><a class="dropdown-item" href="M,M,M_DA.html"> Datos Agrupados</a></li>
+                            <li><a class="dropdown-item" href="M,M,M_DNA.html"> Datos no Agrupados</a></li>
+                            <li><a class="dropdown-item" href="Q,D,P.HTML"> Prototipo</a></li>
                         </ul>
                     </li>
 
@@ -256,25 +284,47 @@
 
 
     <div class="container">
-        <h1>Calcular Moda, Media y Mediana - Datos No Agrupados</h1>
+        <h1>Moda, Media, Mediana, Cuartiles, Deciles, Percentiles</h1>
         <form onsubmit="calcularEstadisticos(event)">
             <div class="mb-3">
                 <label for="inputDatos" class="form-label">Introduce los datos (separados por coma):</label>
                 <input type="text" class="form-control" id="inputDatos" required>
                 <small class="form-text text-muted">Ejemplo: 2, 3, 5, 7, 10</small>
             </div>
+
+            <div class="mb-3">
+                <label for="cuartilValor" class="form-label">Numeros de Cuartiles (separados por coma, ej: 1, 2, 3,
+                    4):</label>
+                <input type="text" class="form-control" id="cuartilValor" placeholder="Ejemplo: 1, 3">
+            </div>
+
+            <div class="mb-3">
+                <label for="decilValor" class="form-label">Numeros de Deciles (separados por coma, ej: 1, 5,
+                    10):</label>
+                <input type="text" class="form-control" id="decilValor" placeholder="Ejemplo: 1, 5, 10">
+            </div>
+
+            <div class="mb-3">
+                <label for="percentilValor" class="form-label">Numeros de Percentiles (separados por coma, ej: 10, 50,
+                    90):</label>
+                <input type="text" class="form-control" id="percentilValor" placeholder="Ejemplo: 10, 50, 90">
+            </div>
+
             <button type="submit" class="btn btn-primary">Calcular</button>
         </form>
 
         <div class="resultados" id="resultados">
-            <h3 id="resultadoModa">Moda: </h3>
-            <h3 id="resultadoMediana">Mediana: </h3>
-            <h3 id="resultadoMedia">Media: </h3>
+            <h3 id="resultadoModa"></h3>
+
+            <h3 id="resultadoMediana"></h3>
+            <h3 id="resultadoMedia"></h3>
+            <h3 id="resultadoPosicional" style="white-space: pre-line;"></h3>
             <button class="btn-pdf" onclick="generarPDF()">Descargar PDF</button>
             <br>
             <a href="#" class="btn-regresar" onclick="window.history.back();">Regresar</a>
         </div>
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js" integrity="sha384-j1CDi7MgGQ12Z7Qab0qlWQ/Qqz24Gc6BM0thvEMVjHnfYGF0rmFCozFSxQBxwHKO" crossorigin="anonymous"></script>
 </body>
 
 </html>

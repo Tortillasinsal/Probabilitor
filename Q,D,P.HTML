@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora Estadística con OCR</title>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+        input, textarea, button {
+            width: 100%;
+            padding: 0.5rem;
+            font-size: 1rem;
+        }
+        .result {
+            margin-top: 1rem;
+            padding: 1rem;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+        <div class="container">
+            <a class="navbar-brand fw-bold text-uppercase text-primary" href="#">Probabilitor</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#menuNavbar">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+    
+            <div class="collapse navbar-collapse justify-content-end" id="menuNavbar">
+                <ul class="navbar-nav mb-2 mb-lg-0">
+                    <!-- Dropdown Datos Agrupados -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="agrupadosDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            OPCIONES
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="agrupadosDropdown">
+                            <li><a class="dropdown-item" href="M,M,M_DA.html"> Datos Agrupados</a></li>
+                            <li><a class="dropdown-item" href="M,M,M_DNA.html"> Datos no Agrupados</a></li>
+                            <li><a class="dropdown-item" href="Q,D,P.HTML"> Prototipo</a></li>
+                        </ul>
+                    </li>
+    
+                    <!-- Contacto -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">Contacto</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <h1>Calculadora Estadística</h1>
+
+    <div class="form-group">
+        <label for="dataInput">Introduce los datos numéricos separados por comas:</label>
+        <textarea id="dataInput" rows="4" placeholder="Ej: 12, 15, 20, 25"></textarea>
+    </div>
+
+    <div class="form-group">
+        <label for="imageInput">O sube una imagen con los datos:</label>
+        <input type="file" accept="image/*" id="imageInput">
+    </div>
+
+    <div class="form-group">
+        <button onclick="calcularEstadisticas()">Calcular</button>
+    </div>
+
+    <div class="result" id="resultados"></div>
+
+    <script>
+        function calcularEstadisticas() {
+            const input = document.getElementById('dataInput').value;
+            const datos = input.split(',').map(d => parseFloat(d.trim())).filter(d => !isNaN(d));
+
+            if (datos.length === 0) {
+                alert("Por favor ingresa datos numéricos válidos.");
+                return;
+            }
+
+            const n = datos.length;
+            const suma = datos.reduce((a, b) => a + b, 0);
+            const media = suma / n;
+            const min = Math.min(...datos);
+            const max = Math.max(...datos);
+            const mediana = calcularMediana(datos);
+
+            document.getElementById('resultados').innerHTML = `
+                <strong>Total de datos:</strong> ${n}<br>
+                <strong>Suma:</strong> ${suma.toFixed(2)}<br>
+                <strong>Media:</strong> ${media.toFixed(2)}<br>
+                <strong>Mediana:</strong> ${mediana.toFixed(2)}<br>
+                <strong>Mínimo:</strong> ${min}<br>
+                <strong>Máximo:</strong> ${max}
+            `;
+        }
+
+        function calcularMediana(arr) {
+            const ordenados = [...arr].sort((a, b) => a - b);
+            const medio = Math.floor(ordenados.length / 2);
+            return ordenados.length % 2 === 0 ?
+                (ordenados[medio - 1] + ordenados[medio]) / 2 :
+                ordenados[medio];
+        }
+
+        document.getElementById('imageInput').addEventListener('change', function () {
+            const file = this.files[0];
+            if (!file) return;
+
+            Tesseract.recognize(
+                file,
+                'spa',
+                { logger: m => console.log(m) }
+            ).then(({ data: { text } }) => {
+                console.log("Texto OCR:", text);
+                const numbers = text.match(/[-]?\d+(\.\d+)?/g);
+                if (numbers && numbers.length > 0) {
+                    document.getElementById('dataInput').value = numbers.join(', ');
+                    alert('Datos extraídos de la imagen y cargados.');
+                } else {
+                    alert("No se detectaron datos numéricos claros en la imagen.");
+                }
+            }).catch(err => {
+                console.error("Error de OCR:", err);
+                alert("Ocurrió un error al procesar la imagen.");
+            });
+        });
+    </script>
+</body>
+</html>
