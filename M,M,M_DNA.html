@@ -7,130 +7,172 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <link rel="icon" href="IMAGENES/logo web.jpg" type="imge/x-icon">
-    <script>
-        function calcularModa(arr) {
-            let counts = {}, maxCount = 0, moda = [];
-            arr.forEach(num => {
-                counts[num] = (counts[num] || 0) + 1;
-                if (counts[num] > maxCount) maxCount = counts[num];
-            });
-            for (let num in counts) {
-                if (counts[num] === maxCount) moda.push(num);
-            }
-            return moda;
+
+<script>
+function calcularModa(arr) {
+    const conteo = {};
+    arr.forEach(num => conteo[num] = (conteo[num] || 0) + 1);
+    const max = Math.max(...Object.values(conteo));
+    return Object.keys(conteo).filter(k => conteo[k] === max).map(Number);
+}
+
+function calcularMediana(arr) {
+    const ordenados = [...arr].sort((a, b) => a - b);
+    const n = ordenados.length;
+    return n % 2 === 0
+        ? (ordenados[n / 2 - 1] + ordenados[n / 2]) / 2
+        : ordenados[Math.floor(n / 2)];
+}
+
+function calcularMedia(arr) {
+    return arr.reduce((acc, val) => acc + val, 0) / arr.length;
+}
+
+function calcularDesviacionMedia(arr, media) {
+    return arr.reduce((acc, val) => acc + Math.abs(val - media), 0) / arr.length;
+}
+
+function calcularVarianza(arr, media, tipo = "muestral") {
+    const n = arr.length;
+    const suma = arr.reduce((acc, val) => acc + Math.pow(val - media, 2), 0);
+    return tipo === "poblacional" ? suma / n : suma / (n - 1);
+}
+
+function calcularDesviacionEstandar(varianza) {
+    return Math.sqrt(varianza);
+}
+
+function calcularAsimetria(arr, media, desviacionEstandar) {
+    const n = arr.length;
+    if (desviacionEstandar === 0) return 0;
+    const numerador = arr.reduce((acc, val) => acc + Math.pow(val - media, 3), 0) / n;
+    return numerador / Math.pow(desviacionEstandar, 3);
+}
+
+function calcularEstadisticoPosicional(arr, tipo, valor) {
+    const ordenados = [...arr].sort((a, b) => a - b);
+    const n = ordenados.length;
+    let pos = 0;
+
+    if (tipo === "cuartil") pos = (valor * (n + 1)) / 4;
+    else if (tipo === "decil") pos = (valor * (n + 1)) / 10;
+    else if (tipo === "percentil") pos = (valor * (n + 1)) / 100;
+    else return "❌ Tipo inválido";
+
+    const k = Math.floor(pos);
+    const d = pos - k;
+
+    if (k <= 0) return ordenados[0];
+    if (k >= n) return ordenados[n - 1];
+    return ordenados[k - 1] + d * (ordenados[k] - ordenados[k - 1]);
+}
+
+function generarTablaFrecuencias(arr) {
+    const frecuencia = {};
+    arr.forEach(num => frecuencia[num] = (frecuencia[num] || 0) + 1);
+    const ordenados = Object.keys(frecuencia).map(Number).sort((a, b) => a - b);
+
+    let fa = 0, fr = 0;
+    return ordenados.map(val => {
+        const f = frecuencia[val];
+        const r = f / arr.length;
+        fa += f;
+        fr += r;
+        return {
+            valor: val,
+            frecuenciaAbsoluta: f,
+            frecuenciaRelativa: r.toFixed(4),
+            frecuenciaAbsolutaAcumulada: fa,
+            frecuenciaRelativaAcumulada: fr.toFixed(4),
+            porcentaje: (r * 100).toFixed(2) + '%'
+        };
+    });
+}
+
+function calcularEstadisticos(event) {
+    event.preventDefault();
+
+    // Limpiar resultados anteriores
+    document.getElementById("resultadoModa").innerText = "";
+    document.getElementById("resultadoMedia").innerText = "";
+    document.getElementById("resultadoMediana").innerText = "";
+    document.getElementById("resultadoPosicional").innerText = "";
+    document.getElementById("resultadoExtra").innerText = "";
+    document.getElementById("tablaFrecuencia").innerHTML = "";
+
+    const datos = document.getElementById("inputDatos").value
+        .split(/[\s,]+/)
+        .map(v => parseFloat(v))
+        .filter(v => !isNaN(v));
+
+    if (datos.length === 0 || datos.length > 120) {
+        alert("Ingrese hasta 120 números válidos separados por espacios o comas.");
+        return;
+    }
+
+    const tipoVarianza = document.getElementById("tipoVarianza").value;
+
+    const moda = calcularModa(datos);
+    const mediana = calcularMediana(datos);
+    const media = calcularMedia(datos);
+    const varianza = calcularVarianza(datos, media, tipoVarianza);
+    const desviacion = calcularDesviacionEstandar(varianza);
+    const desvMedia = calcularDesviacionMedia(datos, media);
+    const asimetria = calcularAsimetria(datos, media, desviacion);
+
+    const cuartiles = document.getElementById("cuartilValor").value.split(',').map(v => parseInt(v.trim()));
+    const deciles = document.getElementById("decilValor").value.split(',').map(v => parseInt(v.trim()));
+    const percentiles = document.getElementById("percentilValor").value.split(',').map(v => parseInt(v.trim()));
+
+    let resultadoPosicional = "";
+    cuartiles.forEach(c => {
+        if (c >= 1 && c <= 4) {
+            resultadoPosicional += `Cuartil ${c}: ${calcularEstadisticoPosicional(datos, "cuartil", c).toFixed(4)}\n`;
         }
-    
-        function calcularMediana(arr) {
-            arr.sort((a, b) => a - b);
-            const middle = Math.floor(arr.length / 2);
-            return arr.length % 2 === 0 ? (arr[middle - 1] + arr[middle]) / 2 : arr[middle];
+    });
+    deciles.forEach(d => {
+        if (d >= 1 && d <= 10) {
+            resultadoPosicional += `Decil ${d}: ${calcularEstadisticoPosicional(datos, "decil", d).toFixed(4)}\n`;
         }
-    
-        function calcularMedia(arr) {
-            return arr.reduce((acc, val) => acc + val, 0) / arr.length;
+    });
+    percentiles.forEach(p => {
+        if (p >= 1 && p <= 100) {
+            resultadoPosicional += `Percentil ${p}: ${calcularEstadisticoPosicional(datos, "percentil", p).toFixed(4)}\n`;
         }
-    
-        function calcularEstadisticoPosicional(arr, tipo, valor) {
-            arr.sort((a, b) => a - b);
-            const n = arr.length;
-            let pos;
-    
-            if (tipo === "cuartil") pos = (valor * (n + 1)) / 4;
-            else if (tipo === "decil") pos = (valor * (n + 1)) / 10;
-            else if (tipo === "percentil") pos = (valor * (n + 1)) / 100;
-            else return "Tipo inválido";
-    
-            const k = Math.floor(pos);
-            const d = pos - k;
-    
-            if (k <= 0) return arr[0];
-            if (k >= n) return arr[n - 1];
-    
-            return arr[k - 1] + d * (arr[k] - arr[k - 1]);
-        }
-    
-        function calcularEstadisticos(event) {
-            event.preventDefault();
-            const datos = document.getElementById("inputDatos").value.split(',').map(num => parseFloat(num.trim()));
-            if (datos.length > 120) return alert("Máximo 120 datos.");
-            if (datos.some(isNaN)) return alert("Solo números separados por coma.");
-    
-            const moda = calcularModa(datos);
-            const mediana = calcularMediana(datos);
-            const media = calcularMedia(datos);
-    
-            const cuartiles = document.getElementById("cuartilValor").value.split(',').map(num => parseInt(num.trim()));
-            const deciles = document.getElementById("decilValor").value.split(',').map(num => parseInt(num.trim()));
-            const percentiles = document.getElementById("percentilValor").value.split(',').map(num => parseInt(num.trim()));
-    
-            let resultadoPosicional = "";
-    
-            // Validación de cuartiles
-            cuartiles.forEach(c => {
-                if (!isNaN(c)) {
-                    if (c >= 1 && c <= 4) {
-                        resultadoPosicional += `Cuartil ${c}: ${calcularEstadisticoPosicional(datos, "cuartil", c)}\n`;
-                    } else {
-                        resultadoPosicional += `Cuartil ${c}: ❌ No existe (solo del 1 al 4)\n`;
-                    }
-                }
-            });
-    
-            // Validación de deciles
-            deciles.forEach(d => {
-                if (!isNaN(d)) {
-                    if (d >= 1 && d <= 10) {
-                        resultadoPosicional += `Decil ${d}: ${calcularEstadisticoPosicional(datos, "decil", d)}\n`;
-                    } else {
-                        resultadoPosicional += `Decil ${d}: ❌ No existe (solo del 1 al 10)\n`;
-                    }
-                }
-            });
-    
-            // Validación de percentiles
-            percentiles.forEach(p => {
-                if (!isNaN(p)) {
-                    if (p >= 1 && p <= 100) {
-                        resultadoPosicional += `Percentil ${p}: ${calcularEstadisticoPosicional(datos, "percentil", p)}\n`;
-                    } else {
-                        resultadoPosicional += `Percentil ${p}: ❌ No existe (solo del 1 al 100)\n`;
-                    }
-                }
-            });
-    
-            document.getElementById("resultadoModa").innerText = "Moda: " + moda.join(', ');
-            document.getElementById("resultadoMediana").innerText = "Mediana: " + mediana;
-            document.getElementById("resultadoMedia").innerText = "Media: " + media;
-    
-            const posDiv = document.getElementById("resultadoPosicional");
-            if (resultadoPosicional) {
-                posDiv.innerText = resultadoPosicional;
-                posDiv.style.display = "block";
-            } else {
-                posDiv.style.display = "none";
-            }
-    
-            document.getElementById("resultados").style.display = "block";
-        }
-    
-        function generarPDF() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            doc.text("Resultados Estadísticos - Datos No Agrupados", 20, 10);
-            doc.text(document.getElementById("resultadoModa").innerText, 20, 20);
-            doc.text(document.getElementById("resultadoMediana").innerText, 20, 30);
-            doc.text(document.getElementById("resultadoMedia").innerText, 20, 40);
-            const posicional = document.getElementById("resultadoPosicional").innerText;
-            if (posicional) {
-                const lines = posicional.split('\n');
-                lines.forEach((line, i) => {
-                    doc.text(line, 20, 50 + i * 10);
-                });
-            }
-            doc.save("resultados_estadisticos_no_agrupados.pdf");
-        }
-    </script>
-    
+    });
+
+    document.getElementById("resultadoModa").innerText = "Moda: " + moda.join(", ");
+    document.getElementById("resultadoMediana").innerText = "Mediana: " + mediana.toFixed(4);
+    document.getElementById("resultadoMedia").innerText = "Media: " + media.toFixed(4);
+    document.getElementById("resultadoPosicional").innerText = resultadoPosicional.trim();
+
+    const extra = `
+Varianza: ${varianza.toFixed(4)}
+Desviación Estándar: ${desviacion.toFixed(4)}
+Desviación Media: ${desvMedia.toFixed(4)}
+Asimetría: ${asimetria.toFixed(4)}
+    `;
+    document.getElementById("resultadoExtra").innerText = extra.trim();
+
+    const tablaHTML = generarTablaFrecuencias(datos).map(row => `
+        <tr>
+            <td>${row.valor}</td>
+            <td>${row.frecuenciaAbsoluta}</td>
+            <td>${row.frecuenciaRelativa}</td>
+            <td>${row.frecuenciaAbsolutaAcumulada}</td>
+            <td>${row.frecuenciaRelativaAcumulada}</td>
+            <td>${row.porcentaje}</td>
+        </tr>
+    `).join('');
+    document.getElementById("tablaFrecuencia").innerHTML = tablaHTML;
+
+    document.getElementById("resultados").style.display = "block";
+}
+</script>
+
+
+
+
     <style>
         body {
             font-family: 'Roboto', sans-serif;
@@ -179,6 +221,7 @@
         .btn-pdf:hover {
             background-color: #3e2fa5;
         }
+
         .navbar {
             display: flex;
             flex-direction: row;
@@ -243,7 +286,7 @@
 
 <body>
 
- 
+
     <!-- Nuevo Navbar con Bootstrap -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
         <div class="container">
@@ -287,9 +330,17 @@
         <h1>Moda, Media, Mediana, Cuartiles, Deciles, Percentiles</h1>
         <form onsubmit="calcularEstadisticos(event)">
             <div class="mb-3">
-                <label for="inputDatos" class="form-label">Introduce los datos (separados por coma):</label>
-                <input type="text" class="form-control" id="inputDatos" required>
-                <small class="form-text text-muted">Ejemplo: 2, 3, 5, 7, 10</small>
+                <label for="inputDatos" class="form-label">Ingresa los datos (separados por coma, espacio o salto de
+                    línea):</label>
+                <textarea id="inputDatos" class="form-control mb-3" rows="4"
+                    placeholder="Ejemplo: 12, 15, 20 25&#10;o bien&#10;12&#10;15&#10;20"></textarea>
+
+                <label for="tipoVarianza">Tipo de varianza:</label>
+                <select id="tipoVarianza">
+                    <option value="muestral" selected>Varianza Muestral (n-1)</option>
+                    <option value="poblacional">Varianza Poblacional (n)</option>
+                </select>
+
             </div>
 
             <div class="mb-3">
@@ -319,12 +370,33 @@
             <h3 id="resultadoMediana"></h3>
             <h3 id="resultadoMedia"></h3>
             <h3 id="resultadoPosicional" style="white-space: pre-line;"></h3>
+
+            <h3 id="resultadoExtra" style="white-space: pre-line;"></h3>
+            <h4>Tabla de Frecuencia:</h4>
+            <table class="table table-dark table-bordered">
+                <thead>
+                    <tr>
+                        <th>Valor</th>
+                        <th>Frecuencia Absoluta</th>
+                        <th>Frecuencia Relativa</th>
+                        <th>Frecuencia Absoluta Acumulada</th>
+                        <th>Frecuencia Relativa Acumulada</th>
+                        <th>Porcentaje</th>
+                    </tr>
+                </thead>
+
+                <tbody id="tablaFrecuencia">
+                </tbody>
+            </table>
+
             <button class="btn-pdf" onclick="generarPDF()">Descargar PDF</button>
             <br>
             <a href="#" class="btn-regresar" onclick="window.history.back();">Regresar</a>
         </div>
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js" integrity="sha384-j1CDi7MgGQ12Z7Qab0qlWQ/Qqz24Gc6BM0thvEMVjHnfYGF0rmFCozFSxQBxwHKO" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-j1CDi7MgGQ12Z7Qab0qlWQ/Qqz24Gc6BM0thvEMVjHnfYGF0rmFCozFSxQBxwHKO"
+        crossorigin="anonymous"></script>
 </body>
 
 </html>
